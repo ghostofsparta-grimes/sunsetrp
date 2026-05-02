@@ -1,0 +1,1864 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SunSet RP Portal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root {
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #12121f;
+    --bg-card: rgba(255,255,255,0.03);
+    --border: rgba(255,255,255,0.06);
+    --text-primary: #e8e8e8;
+    --text-secondary: #8b8b9a;
+    --accent: #00d4aa;
+    --accent-orange: #ff6b35;
+    --accent-red: #ff4757;
+    --accent-blue: #3742fa;
+    --accent-purple: #a55eea;
+    --accent-gold: #ffd700;
+    --shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+.login-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 400px;
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 40px;
+    box-shadow: var(--shadow);
+    animation: slideUp 0.6s ease;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.login-card .logo { text-align: center; font-size: 48px; margin-bottom: 8px; }
+.login-card h2 {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.login-card .subtitle { text-align: center; color: var(--text-secondary); font-size: 14px; margin-bottom: 32px; }
+
+.input-group { margin-bottom: 16px; position: relative; }
+.input-group i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 14px; }
+.input-group input {
+    width: 100%;
+    padding: 14px 16px 14px 44px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    outline: none;
+    background: rgba(255,255,255,0.02);
+    color: var(--text-primary);
+    font-size: 14px;
+    transition: all 0.3s;
+    font-family: 'Inter', sans-serif;
+}
+.input-group input:focus { border-color: var(--accent); background: rgba(255,255,255,0.04); box-shadow: 0 0 0 3px rgba(0,212,170,0.1); }
+
+.btn-primary {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--accent), #00a884);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: 'Inter', sans-serif;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,212,170,0.4); }
+.btn-primary:disabled { background: #444; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.msg { text-align: center; margin-top: 16px; font-size: 14px; min-height: 20px; font-weight: 500; }
+.msg.success { color: var(--accent); }
+.msg.error { color: var(--accent-red); }
+.msg.loading { color: var(--accent-orange); }
+
+.dashboard { display: none; min-height: 100vh; }
+
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 280px;
+    height: 100vh;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    padding: 24px 16px;
+    overflow-y: auto;
+    z-index: 100;
+    transition: transform 0.3s;
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 12px 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+}
+
+.sidebar-header .avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-blue));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 18px;
+    color: white;
+}
+
+.sidebar-header .info h4 { font-size: 14px; font-weight: 600; }
+.sidebar-header .info span { font-size: 12px; color: var(--text-secondary); }
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 4px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+}
+.nav-item:hover { background: rgba(255,255,255,0.03); color: var(--text-primary); }
+.nav-item.active {
+    background: linear-gradient(135deg, rgba(0,212,170,0.15), rgba(55,66,250,0.15));
+    color: var(--accent);
+    border: 1px solid rgba(0,212,170,0.2);
+}
+.nav-item i { width: 20px; text-align: center; }
+
+.main-content {
+    margin-left: 280px;
+    padding: 32px;
+    min-height: 100vh;
+}
+
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.top-bar h1 { font-size: 28px; font-weight: 700; }
+
+.btn-logout {
+    padding: 10px 20px;
+    background: rgba(255,71,87,0.1);
+    border: 1px solid rgba(255,71,87,0.3);
+    border-radius: 10px;
+    color: var(--accent-red);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+}
+.btn-logout:hover { background: rgba(255,71,87,0.2); }
+
+.profile-hero {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 24px;
+    align-items: center;
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    margin-bottom: 32px;
+    box-shadow: var(--shadow);
+}
+
+.profile-hero .skin-image {
+    width: 100px;
+    height: 160px;
+    border-radius: 12px;
+    object-fit: cover;
+    border: 2px solid var(--accent);
+    box-shadow: 0 4px 20px rgba(0,212,170,0.3);
+}
+
+.profile-hero .details h2 { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+.profile-hero .details .badges { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.badge-admin { background: rgba(255,107,53,0.15); color: var(--accent-orange); border: 1px solid rgba(255,107,53,0.3); }
+.badge-helper { background: rgba(55,66,250,0.15); color: var(--accent-blue); border: 1px solid rgba(55,66,250,0.3); }
+.badge-vip { background: rgba(255,215,0,0.15); color: var(--accent-gold); border: 1px solid rgba(255,215,0,0.3); }
+.badge-faction { background: rgba(165,94,234,0.15); color: var(--accent-purple); border: 1px solid rgba(165,94,234,0.3); }
+
+.profile-hero .quick-stats { display: flex; gap: 24px; }
+.quick-stat { text-align: center; }
+.quick-stat .value { font-size: 24px; font-weight: 700; color: var(--accent); }
+.quick-stat .label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+.section { display: none; animation: fadeIn 0.4s ease; }
+.section.active { display: block; }
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.section-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.section-title i { color: var(--accent); }
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.stat-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+.stat-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(255,255,255,0.1);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-blue));
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.stat-card:hover::before { opacity: 1; }
+
+.stat-card .icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+.stat-card .label { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.stat-card .value { font-size: 20px; font-weight: 700; color: var(--text-primary); word-break: break-word; }
+.stat-card .value.small { font-size: 14px; }
+
+.vehicle-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.vehicle-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s;
+}
+.vehicle-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    border-color: rgba(255,255,255,0.1);
+}
+
+.vehicle-card .vehicle-image {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+}
+
+.vehicle-card .vehicle-info { padding: 20px; }
+.vehicle-card .vehicle-name { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.vehicle-card .vehicle-meta {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+.vehicle-card .vehicle-meta span {
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: rgba(255,255,255,0.03);
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.status-spawned { background: rgba(0,212,170,0.15); color: var(--accent); }
+.status-despawned { background: rgba(255,71,87,0.15); color: var(--accent-red); }
+.status-impounded { background: rgba(255,107,53,0.15); color: var(--accent-orange); }
+.status-broken { background: rgba(255,71,87,0.1); color: #ff6b6b; }
+.status-garage { background: rgba(55,66,250,0.15); color: var(--accent-blue); }
+
+.org-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+.org-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    transition: all 0.3s;
+}
+.org-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255,255,255,0.1);
+    box-shadow: var(--shadow);
+}
+
+.org-card .org-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.org-card .org-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 700;
+    color: white;
+}
+
+.org-card .org-name { font-size: 18px; font-weight: 700; }
+.org-card .org-type {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.org-card .org-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+
+.org-card .org-stat { text-align: center; }
+.org-card .org-stat .num { font-size: 18px; font-weight: 700; color: var(--accent); }
+.org-card .org-stat .lbl { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; margin-top: 4px; }
+
+#map {
+    width: 100%;
+    height: 500px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    margin-bottom: 20px;
+}
+
+/* Table wrapper for horizontal scroll */
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-card);
+    min-width: 600px;
+}
+
+.data-table th,
+.data-table td {
+    padding: 14px 20px;
+    text-align: left;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.data-table th {
+    background: rgba(255,255,255,0.03);
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 1px;
+}
+
+.data-table td {
+    border-top: 1px solid var(--border);
+    color: var(--text-primary);
+}
+
+.data-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+.mobile-toggle {
+    display: none;
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 200;
+    width: 40px;
+    height: 40px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-primary);
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+/* ========== MOBILE RESPONSIVE ========== */
+@media (max-width: 768px) {
+    .sidebar { transform: translateX(-100%); width: 260px; }
+    .sidebar.open { transform: translateX(0); }
+    .main-content { margin-left: 0; padding: 80px 16px 20px; }
+    .mobile-toggle { display: flex; }
+    
+    /* Profile hero - stack vertically */
+    .profile-hero { 
+        grid-template-columns: 1fr; 
+        text-align: center; 
+        padding: 20px;
+        gap: 16px;
+    }
+    .profile-hero .skin-image { 
+        width: 80px; 
+        height: 130px; 
+        margin: 0 auto; 
+    }
+    .profile-hero .quick-stats { 
+        justify-content: center; 
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    .profile-hero .details h2 { font-size: 20px; }
+    
+    /* Stats grid - smaller cards */
+    .stats-grid { 
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 12px;
+    }
+    .stat-card { padding: 16px; }
+    .stat-card .value { font-size: 16px; }
+    .stat-card .value.small { font-size: 12px; }
+    
+    /* Vehicle & org grids - single column */
+    .vehicle-grid, .org-grid { 
+        grid-template-columns: 1fr; 
+        gap: 16px;
+    }
+    
+    /* Top bar */
+    .top-bar { margin-bottom: 20px; padding-bottom: 16px; }
+    .top-bar h1 { font-size: 22px; }
+    
+    /* Section title */
+    .section-title { font-size: 18px; margin-bottom: 16px; }
+    
+    /* Data tables - scrollable */
+    .data-table th, .data-table td { 
+        padding: 12px 16px; 
+        font-size: 13px;
+    }
+    
+    /* Login card */
+    .login-card { padding: 32px 24px; }
+    .login-card h2 { font-size: 24px; }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+    .stats-grid { 
+        grid-template-columns: 1fr; 
+    }
+    
+    .profile-hero .quick-stats { 
+        gap: 12px;
+    }
+    .quick-stat .value { font-size: 20px; }
+    
+    .badge { 
+        font-size: 10px; 
+        padding: 3px 10px; 
+    }
+    
+    .btn-logout { 
+        padding: 8px 16px; 
+        font-size: 12px; 
+    }
+    
+    /* Chat mobile fixes */
+    .chat-container { 
+        height: calc(100vh - 200px) !important; 
+    }
+}
+
+.loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+.loading-spinner i { margin-right: 8px; animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+}
+.empty-state i { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+.empty-state h3 { font-size: 18px; margin-bottom: 8px; color: var(--text-primary); }
+
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="loginScreen">
+    <div class="login-card">
+        <div class="logo">🎮</div>
+        <h2>SUNSET RP</h2>
+        <p class="subtitle">Access your account, vehicles & server info</p>
+        
+        <div class="input-group">
+            <i class="fas fa-user"></i>
+            <input id="username" placeholder="Username" maxlength="24" autocomplete="off">
+        </div>
+        <div class="input-group">
+            <i class="fas fa-lock"></i>
+            <input id="password" type="password" placeholder="Password" maxlength="128">
+        </div>
+        
+        <button class="btn-primary" id="btn" onclick="login()">Login</button>
+        <div class="msg" id="msg"></div>
+    </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dashboard" id="dashboard">
+    <div class="mobile-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </div>
+    
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="avatar" id="sidebarAvatar">?</div>
+            <div class="info">
+                <h4 id="sidebarName">Player</h4>
+                <span id="sidebarRank">Member</span>
+            </div>
+        </div>
+        
+        <nav>
+            <div class="nav-item active" onclick="showSection('player', this)">
+                <i class="fas fa-user"></i> Player Details
+            </div>
+            <div class="nav-item" onclick="showSection('vehicles', this)">
+                <i class="fas fa-car"></i> Vehicles
+            </div>
+            <div class="nav-item" onclick="showSection('houses', this)">
+                <i class="fas fa-home"></i> Houses
+            </div>
+            <div class="nav-item" onclick="showSection('map', this)">
+                <i class="fas fa-map-marked-alt"></i> Map
+            </div>
+            <div class="nav-item" onclick="showSection('factions', this)">
+                <i class="fas fa-shield-alt"></i> Factions
+            </div>
+            <div class="nav-item" onclick="showSection('gangs', this)">
+                <i class="fas fa-skull"></i> Gangs
+            </div>
+            <div class="nav-item" onclick="showSection('points', this)">
+                <i class="fas fa-map-pin"></i> Points
+            </div>
+            <div class="nav-item" onclick="showSection('turfs', this)">
+                <i class="fas fa-border-all"></i> Turfs
+            </div>
+            <div class="nav-item" onclick="showSection('chat', this)">
+                <i class="fas fa-comments"></i> Chat
+           </div>
+        </nav>
+    </aside>
+    
+    <main class="main-content">
+        <div class="top-bar">
+            <h1 id="pageTitle">Player Details</h1>
+            <div class="actions">
+                <button class="btn-logout" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+        
+        <div class="profile-hero" id="profileHero">
+            <img class="skin-image" id="heroSkin" src="https://files.sa-mp.com/skins/0.png" alt="Skin" onerror="this.src='https://files.sa-mp.com/skins/0.png'">
+            <div class="details">
+                <h2 id="heroName">Player</h2>
+                <div class="badges" id="heroBadges"></div>
+            </div>
+            <div class="quick-stats" id="heroStats"></div>
+        </div>
+        
+        <div id="sectionsContainer"></div>
+    </main>
+</div>
+
+<script>
+const API = "https://sampapi.onrender.com";
+let userData = null;
+let currentMap = null;
+
+window.onload = () => {
+    const token = localStorage.getItem("token");
+    if (token) loadDashboard();
+};
+
+document.getElementById("password").addEventListener("keypress", (e) => {
+    if (e.key === "Enter") login();
+});
+
+async function login() {
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const msg = document.getElementById("msg");
+    const btn = document.getElementById("btn");
+
+    msg.className = "";
+    msg.innerText = "";
+
+    if (!username || !password) {
+        msg.innerText = "Please fill all fields";
+        msg.className = "error";
+        return;
+    }
+
+    btn.disabled = true;
+    msg.innerText = "Authenticating...";
+    msg.className = "loading";
+
+    try {
+        const res = await fetch(API + "/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            msg.innerText = "Success!";
+            msg.className = "success";
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("uid", data.uid);
+            localStorage.setItem("username", data.username);
+            setTimeout(loadDashboard, 500);
+        } else {
+            msg.innerText = data.message || "Login failed";
+            msg.className = "error";
+        }
+    } catch (err) {
+        msg.innerText = "Cannot connect to server";
+        msg.className = "error";
+    }
+
+    btn.disabled = false;
+}
+
+async function loadDashboard() {
+    const token = localStorage.getItem("token");
+    if (!token) return logout();
+
+    try {
+        const res = await fetch(API + "/stats", {
+            headers: { "Authorization": "Bearer " + token }
+        });
+        const data = await res.json();
+        
+        if (!data.success) {
+            if (res.status === 401) return logout();
+            alert(data.message);
+            return;
+        }
+
+        userData = data.data;
+        document.getElementById("loginScreen").style.display = "none";
+        document.getElementById("dashboard").style.display = "block";
+        renderDashboard();
+    } catch (err) {
+        console.error(err);
+        logout();
+    }
+}
+
+function renderDashboard() {
+    const d = userData;
+    const name = d.username || localStorage.getItem("username") || "Player";
+    const initial = name.charAt(0).toUpperCase();
+    
+    document.getElementById("sidebarAvatar").innerText = initial;
+    document.getElementById("sidebarName").innerText = name;
+    
+    const rankText = d.adminlevel > 0 ? `Admin ${d.adminlevel}` : d.helperlevel > 0 ? `Helper ${d.helperlevel}` : d.vippackage > 0 ? "VIP" : "Member";
+    document.getElementById("sidebarRank").innerText = rankText;
+    
+    document.getElementById("heroSkin").src = `https://sa-skins.netlify.app/${d.skin || 0}.png`;
+    document.getElementById("heroName").innerText = name;
+    
+    const badges = document.getElementById("heroBadges");
+    badges.innerHTML = "";
+    if (d.adminlevel > 0) badges.innerHTML += `<span class="badge badge-admin">Admin ${d.adminlevel}</span>`;
+    if (d.helperlevel > 0) badges.innerHTML += `<span class="badge badge-helper">Helper ${d.helperlevel}</span>`;
+    if (d.vippackage > 0) badges.innerHTML += `<span class="badge badge-vip">VIP ${d.vippackage}</span>`;
+    if (d.faction > 0) badges.innerHTML += `<span class="badge badge-faction">Faction</span>`;
+    
+    const heroStats = document.getElementById("heroStats");
+    heroStats.innerHTML = `
+        <div class="quick-stat"><div class="value">${d.level || 0}</div><div class="label">Level</div></div>
+        <div class="quick-stat"><div class="value">$${formatNum(d.cash || 0)}</div><div class="label">Cash</div></div>
+        <div class="quick-stat"><div class="value">${d.hours || 0}h</div><div class="label">Played</div></div>
+        <div class="quick-stat"><div class="value">${Math.floor(d.health || 100)}</div><div class="label">Health</div></div>
+    `;
+    
+    buildSections();
+    showSection('player', document.querySelector('.nav-item.active'));
+}
+
+function buildSections() {
+    const d = userData;
+    const container = document.getElementById("sectionsContainer");
+    
+    const sections = {
+        player: {
+            title: "Player Details",
+            icon: "fa-user",
+            groups: [
+                {
+                    title: "Identity",
+                    stats: [
+                        { key: "uid", label: "UID", icon: "fa-fingerprint" },
+                        { key: "username", label: "Username", icon: "fa-user-tag" },
+                        { key: "level", label: "Level", icon: "fa-star" },
+                        { key: "exp", label: "Experience", icon: "fa-bolt" },
+                        { key: "hours", label: "Hours Played", icon: "fa-clock" },
+                        { key: "minutes", label: "Minutes", icon: "fa-stopwatch" },
+                        { key: "gender", label: "Gender", icon: "fa-venus-mars", fmt: v => v==1?"Male":v==2?"Female":"Unknown" },
+                        { key: "age", label: "Age", icon: "fa-birthday-cake" },
+                        { key: "skin", label: "Skin ID", icon: "fa-tshirt" },
+                        { key: "accent", label: "Accent", icon: "fa-globe" },
+                        { key: "customtitle", label: "Custom Title", icon: "fa-crown" },
+                        { key: "adminname", label: "Admin Name", icon: "fa-id-badge" },
+                        { key: "lastlogin", label: "Last Login", icon: "fa-history" }
+                    ]
+                },
+                {
+                    title: "Finance",
+                    stats: [
+                        { key: "cash", label: "Cash", icon: "fa-money-bill-wave", fmt: v => "$"+formatNum(v) },
+                        { key: "bank", label: "Bank", icon: "fa-university", fmt: v => "$"+formatNum(v) },
+                        { key: "paycheck", label: "Paycheck", icon: "fa-file-invoice-dollar", fmt: v => "$"+formatNum(v) },
+                        { key: "dirtycash", label: "Dirty Cash", icon: "fa-hand-holding-usd", fmt: v => "$"+formatNum(v) },
+                        { key: "bank_balance", label: "Bank Balance", icon: "fa-piggy-bank", fmt: v => "$"+formatNum(v) },
+                        { key: "golddollar", label: "Gold Dollars", icon: "fa-coins", fmt: v => formatNum(v) },
+                        { key: "culvercoin", label: "Culver Coins", icon: "fa-coins", fmt: v => formatNum(v) },
+                        { key: "BTC", label: "Bitcoin", icon: "fa-bitcoin", fmt: v => formatNum(v) },
+                        { key: "diamonds", label: "Diamonds", icon: "fa-gem", fmt: v => formatNum(v) }
+                    ]
+                },
+                {
+                    title: "Status",
+                    stats: [
+                        { key: "health", label: "Health", icon: "fa-heart", fmt: v => Math.floor(v||0) },
+                        { key: "armor", label: "Armor", icon: "fa-shield-alt", fmt: v => Math.floor(v||0) },
+                        { key: "wantedlevel", label: "Wanted Level", icon: "fa-star", fmt: v => "⭐".repeat(Math.min(v||0,6)) || "Clean" },
+                        { key: "crimes", label: "Crimes", icon: "fa-exclamation-triangle", fmt: v => formatNum(v) },
+                        { key: "arrested", label: "Arrested", icon: "fa-handcuffs", fmt: v => formatNum(v) },
+                        { key: "jailtime", label: "Jail Time", icon: "fa-hourglass-half", fmt: v => (v||0)+" min" },
+                        { key: "warnings", label: "Warnings", icon: "fa-exclamation-circle", fmt: v => formatNum(v) }
+                    ]
+                },
+                {
+                    title: "Jobs & Faction",
+                    stats: [
+                        { key: "faction", label: "Faction", icon: "fa-flag" },
+                        { key: "factionrank", label: "Faction Rank", icon: "fa-medal" },
+                        { key: "gang", label: "Gang", icon: "fa-skull" },
+                        { key: "gangrank", label: "Gang Rank", icon: "fa-skull-crossbones" },
+                        { key: "company", label: "Company", icon: "fa-building" },
+                        { key: "companyrank", label: "Company Rank", icon: "fa-briefcase" },
+                        { key: "job", label: "Job", icon: "fa-hard-hat" },
+                        { key: "secondjob", label: "Second Job", icon: "fa-hard-hat" }
+                    ]
+                },
+                {
+                    title: "Licenses",
+                    stats: [
+                        { key: "carlicense", label: "Car License", icon: "fa-car", fmt: v => v?"Licensed":"No" },
+                        { key: "gunlicense", label: "Gun License", icon: "fa-crosshairs", fmt: v => v?"Licensed":"No" },
+                        { key: "passport", label: "Passport", icon: "fa-passport", fmt: v => v?"Yes":"No" },
+                        { key: "nationalid", label: "National ID", icon: "fa-id-badge", fmt: v => v?"Yes":"No" },
+                        { key: "citizen", label: "Citizen", icon: "fa-flag-usa", fmt: v => v?"Yes":"No" },
+                        { key: "insurance", label: "Insurance", icon: "fa-umbrella", fmt: v => v?"Yes":"No" }
+                    ]
+                },
+                {
+                    title: "Skills",
+                    stats: [
+                        { key: "fishingskill", label: "Fishing", icon: "fa-fish" },
+                        { key: "courierskill", label: "Courier", icon: "fa-shipping-fast" },
+                        { key: "guardskill", label: "Guard", icon: "fa-shield-alt" },
+                        { key: "weaponskill", label: "Weapon", icon: "fa-khanda" },
+                        { key: "lawyerskill", label: "Lawyer", icon: "fa-balance-scale" },
+                        { key: "smugglerskill", label: "Smuggler", icon: "fa-parachute-box" },
+                        { key: "detectiveskill", label: "Detective", icon: "fa-search" }
+                    ]
+                },
+                {
+                    title: "Inventory",
+                    stats: [
+                        { key: "materials", label: "Materials", icon: "fa-cubes", fmt: v => formatNum(v) },
+                        { key: "pot", label: "Pot", icon: "fa-cannabis", fmt: v => formatNum(v) },
+                        { key: "crack", label: "Crack", icon: "fa-skull", fmt: v => formatNum(v) },
+                        { key: "meth", label: "Meth", icon: "fa-flask", fmt: v => formatNum(v) },
+                        { key: "painkillers", label: "Painkillers", icon: "fa-pills", fmt: v => formatNum(v) },
+                        { key: "cigars", label: "Cigars", icon: "fa-smoking", fmt: v => formatNum(v) },
+                        { key: "weaponclip", label: "Weapon Clips", icon: "fa-box-open", fmt: v => formatNum(v) },
+                        { key: "bandage", label: "Bandages", icon: "fa-band-aid", fmt: v => formatNum(v) },
+                        { key: "medkit", label: "Medkits", icon: "fa-first-aid", fmt: v => formatNum(v) },
+                        { key: "phone", label: "Phone", icon: "fa-mobile-alt", fmt: v => formatNum(v) },
+                        { key: "laptop", label: "Laptop", icon: "fa-laptop", fmt: v => formatNum(v) },
+                        { key: "c4", label: "C4", icon: "fa-bomb", fmt: v => formatNum(v) },
+                        { key: "food", label: "Food", icon: "fa-hamburger", fmt: v => formatNum(v) },
+                        { key: "drink", label: "Drink", icon: "fa-wine-bottle", fmt: v => formatNum(v) }
+                    ]
+                },
+                {
+                    title: "VIP & Upgrades",
+                    stats: [
+                        { key: "vippackage", label: "VIP Package", icon: "fa-crown" },
+                        { key: "viptime", label: "VIP Time", icon: "fa-clock", fmt: v => (v||0)+" min" },
+                        { key: "upgradepoints", label: "Upgrade Points", icon: "fa-arrow-up", fmt: v => formatNum(v) },
+                        { key: "inventoryupgrade", label: "Inventory Upgrade", icon: "fa-box-open" },
+                        { key: "traderupgrade", label: "Trader Upgrade", icon: "fa-handshake" },
+                        { key: "doublexp", label: "Double XP", icon: "fa-bolt", fmt: v => v?"Active":"Inactive" }
+                    ]
+                }
+            ]
+        },
+        vehicles: {
+            title: "My Vehicles",
+            icon: "fa-car",
+            async: true,
+            loader: loadVehicles
+        },
+        houses: {
+            title: "My Houses",
+            icon: "fa-home",
+            async: true,
+            loader: loadHouses
+        },
+        map: {
+            title: "Live Map",
+            icon: "fa-map-marked-alt",
+            async: true,
+            loader: loadMap
+        },
+        factions: {
+            title: "Factions",
+            icon: "fa-shield-alt",
+            async: true,
+            loader: loadFactions
+        },
+        gangs: {
+            title: "Gangs",
+            icon: "fa-skull",
+            async: true,
+            loader: loadGangs
+        },
+        points: {
+            title: "Points",
+            icon: "fa-map-pin",
+            async: true,
+            loader: loadPoints
+        },
+        turfs: {
+            title: "Turfs",
+            icon: "fa-border-all",
+            async: true,
+            loader: loadTurfs
+        },
+        chat: {
+            title: "General Chat",
+            icon: "fa-comments",
+            async: true,
+            loader: loadChat
+       }
+    };
+
+    let html = "";
+    for (const [id, section] of Object.entries(sections)) {
+        html += `<div class="section" id="section-${id}">`;
+        html += `<div class="section-title"><i class="fas ${section.icon}"></i> ${section.title}</div>`;
+        
+        if (section.groups) {
+            for (const group of section.groups) {
+                if (group.title) {
+                    html += `<h3 style="font-size:14px;color:var(--text-secondary);margin:20px 0 12px;text-transform:uppercase;letter-spacing:1px;">${group.title}</h3>`;
+                }
+                html += `<div class="stats-grid">`;
+                for (const stat of group.stats) {
+                    let val = d[stat.key];
+                    if (val === null || val === undefined) val = 0;
+                    if (stat.fmt) val = stat.fmt(val);
+                    
+                    const iconColors = [
+                        "linear-gradient(135deg,#00d4aa,#00a884)",
+                        "linear-gradient(135deg,#ff6b35,#ff4757)",
+                        "linear-gradient(135deg,#3742fa,#2f3542)",
+                        "linear-gradient(135deg,#a55eea,#8854d0)",
+                        "linear-gradient(135deg,#ffd700,#ff9f43)"
+                    ];
+                    const color = iconColors[Math.abs(stat.label.length) % iconColors.length];
+                    
+                    html += `
+                        <div class="stat-card">
+                            <div class="icon" style="background:${color};color:white;">
+                                <i class="fas ${stat.icon}"></i>
+                            </div>
+                            <div class="label">${stat.label}</div>
+                            <div class="value ${String(val).length > 12 ? 'small' : ''}">${val !== "" ? val : "—"}</div>
+                        </div>
+                    `;
+                }
+                html += `</div>`;
+            }
+        } else if (section.async) {
+            html += `<div class="loading-spinner" id="loader-${id}"><i class="fas fa-spinner"></i> Loading...</div>`;
+            html += `<div id="content-${id}"></div>`;
+        }
+        html += `</div>`;
+    }
+    
+    container.innerHTML = html;
+}
+
+async function muteUser(targetUid, minutes) {
+    const token = localStorage.getItem("token");
+    const reason = prompt("Mute reason:");
+    if (!reason) return;
+    
+    try {
+        const res = await fetch(API + "/admin/mute", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+            },
+            body: JSON.stringify({ targetUid, reason, duration: minutes })
+        });
+        const data = await res.json();
+        alert(data.message);
+    } catch (err) {
+        console.error(err);
+        alert("Failed to mute");
+    }
+}
+
+
+async function showSection(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    
+    const section = document.getElementById('section-' + id);
+    if (section) section.classList.add('active');
+    if (el) el.classList.add('active');
+    
+    const titles = {
+        player: "Player Details", vehicles: "My Vehicles", houses: "My Houses",
+        map: "Live Map", factions: "Factions", gangs: "Gangs",
+        points: "Points", turfs: "Turfs", chat: "General Chat"
+    };
+    document.getElementById('pageTitle').innerText = titles[id] || id;
+    
+    document.getElementById('profileHero').style.display = id === 'player' ? 'grid' : 'none';
+    document.getElementById('sidebar').classList.remove('open');
+    
+    const loaders = {
+        vehicles: loadVehicles, houses: loadHouses, map: loadMap,
+        factions: loadFactions, gangs: loadGangs, points: loadPoints, 
+        turfs: loadTurfs, chat: loadChat
+    };
+    
+    if (loaders[id]) await loaders[id]();
+}
+
+
+
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+}
+
+let replyToId = null;
+let replyToUsername = null;
+let chatStickers = [];
+
+async function loadChat() {
+    const token = localStorage.getItem("token");
+    const content = document.getElementById("content-chat");
+    const loader = document.getElementById("loader-chat");
+    if (!content || !loader) return;
+    
+    // Load stickers once
+    if (!chatStickers.length) {
+        try {
+            const sres = await fetch(API + "/stickers", { headers: { "Authorization": "Bearer " + token }});
+            const sdata = await sres.json();
+            if (sdata.success) chatStickers = sdata.data;
+        } catch(e) {}
+    }
+    
+    try {
+        const res = await fetch(API + "/chat", {
+            headers: { "Authorization": "Bearer " + token }
+        });
+        const data = await res.json();
+        
+        let html = `
+            <div style="display:flex;flex-direction:column;height:75vh;background:var(--bg-card);border:1px solid var(--border);border-radius:16px;overflow:hidden;">
+                <div id="chat-messages" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:8px;">
+        `;
+        
+        if (data.success && data.data.length) {
+            for (const msg of data.data) {
+                const isMe = msg.uid === parseInt(localStorage.getItem("uid"));
+                html += renderChatMessage(msg, isMe);
+            }
+        } else {
+            html += `<div class="empty-state" style="padding:40px 20px;"><i class="fas fa-comments"></i><h3>No messages yet</h3><p>Be the first to say something!</p></div>`;
+        }
+        
+        html += `
+                </div>
+                <div id="reply-bar" style="display:none;padding:8px 16px;background:rgba(0,212,170,0.1);border-top:1px solid var(--border);font-size:12px;color:var(--accent);align-items:center;gap:8px;">
+                    <i class="fas fa-reply"></i> Replying to <span id="reply-name"></span>
+                    <button onclick="cancelReply()" style="margin-left:auto;background:none;border:none;color:var(--text-secondary);cursor:pointer;"><i class="fas fa-times"></i></button>
+                </div>
+                <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;background:rgba(255,255,255,0.02);align-items:center;">
+                    <button onclick="toggleStickers()" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:18px;padding:8px;"><i class="fas fa-smile"></i></button>
+                    <input id="chat-input" type="text" placeholder="Type a message..." maxlength="256" 
+                        style="flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,0.03);color:var(--text-primary);font-family:Inter,sans-serif;outline:none;font-size:14px;">
+                    <button onclick="sendMessage()" class="btn-primary" style="width:auto;padding:10px 20px;">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+                <div id="sticker-picker" style="display:none;padding:12px;border-top:1px solid var(--border);background:var(--bg-secondary);gap:8px;flex-wrap:wrap;max-height:120px;overflow-y:auto;">
+                    ${chatStickers.map(s => `
+                        <button onclick="sendSticker('${s.code}')" style="background:none;border:none;cursor:pointer;padding:4px;border-radius:8px;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='none'">
+                            <img src="${s.url}" style="width:40px;height:40px;object-fit:contain;" title="${s.name}">
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+        
+        content.innerHTML = html;
+        loader.style.display = "none";
+        
+        // Auto-scroll
+        const msgContainer = document.getElementById("chat-messages");
+        if (msgContainer) msgContainer.scrollTop = msgContainer.scrollHeight;
+        
+        // Enter key
+        document.getElementById("chat-input")?.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") sendMessage();
+        });
+        
+    } catch (err) {
+        console.error(err);
+        content.innerHTML = `<div class="empty-state"><h3>Error loading chat</h3></div>`;
+        loader.style.display = "none";
+    }
+}
+
+function renderChatMessage(msg, isMe) {
+    const time = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    const align = isMe ? 'flex-end' : 'flex-start';
+    const bg = isMe ? 'linear-gradient(135deg, var(--accent), #00a884)' : 'var(--bg-secondary)';
+    const color = isMe ? 'white' : 'var(--text-primary)';
+    const border = isMe ? 'none' : '1px solid var(--border)';
+    
+    // Parse reactions
+    let reactionsHtml = '';
+    if (msg.reactions) {
+        const reactions = typeof msg.reactions === 'string' ? JSON.parse(msg.reactions) : msg.reactions;
+        const reactionEntries = Object.entries(reactions).filter(([_, users]) => users.length > 0);
+        if (reactionEntries.length) {
+            reactionsHtml = `<div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;">`;
+            for (const [emoji, users] of reactionEntries) {
+                reactionsHtml += `
+                    <button onclick="reactToMessage(${msg.id}, '${emoji}')" 
+                        style="background:rgba(255,255,255,0.1);border:none;border-radius:12px;padding:2px 8px;font-size:12px;cursor:pointer;color:${color};display:flex;align-items:center;gap:4px;">
+                        ${emoji} ${users.length}
+                    </button>`;
+            }
+            reactionsHtml += `</div>`;
+        }
+    }
+    
+    // Reply preview
+    let replyHtml = '';
+    if (msg.reply_to && msg.reply_username) {
+        replyHtml = `
+            <div style="font-size:11px;color:${isMe ? 'rgba(255,255,255,0.7)' : 'var(--text-secondary)'};margin-bottom:4px;padding-left:8px;border-left:2px solid ${isMe ? 'rgba(255,255,255,0.5)' : 'var(--accent)'};">
+                <i class="fas fa-reply" style="font-size:9px;"></i> ${escapeHtml(msg.reply_username)}
+            </div>`;
+    }
+    
+    // Message text with sticker support
+    let messageText = escapeHtml(msg.message);
+    chatStickers.forEach(s => {
+        messageText = messageText.replace(
+            new RegExp(escapeRegex(s.code), 'g'),
+            `<img src="${s.url}" style="width:48px;height:48px;object-fit:contain;vertical-align:middle;" title="${s.name}">`
+        );
+    });
+    
+    const showDelete = isMe || userData?.adminlevel > 0;
+    const deleteBtn = showDelete ? `
+        <button onclick="deleteMessage(${msg.id})" style="background:none;border:none;color:${isMe ? 'rgba(255,255,255,0.6)' : 'var(--text-secondary)'};cursor:pointer;font-size:11px;padding:2px;margin-left:4px;opacity:0;transition:opacity 0.2s;" class="msg-delete-btn">
+            <i class="fas fa-trash"></i>
+        </button>
+    ` : '';
+    
+    const replyBtn = `
+        <button onclick="startReply(${msg.id}, '${escapeHtml(msg.username)}')" style="background:none;border:none;color:${isMe ? 'rgba(255,255,255,0.6)' : 'var(--text-secondary)'};cursor:pointer;font-size:11px;padding:2px;opacity:0;transition:opacity 0.2s;" class="msg-reply-btn">
+            <i class="fas fa-reply"></i>
+        </button>
+    `;
+    
+    return `
+        <div style="display:flex;flex-direction:column;align-items:${align};max-width:75%;align-self:${align};" 
+             onmouseenter="this.querySelectorAll('.msg-delete-btn,.msg-reply-btn').forEach(b=>b.style.opacity='1')" 
+             onmouseleave="this.querySelectorAll('.msg-delete-btn,.msg-reply-btn').forEach(b=>b.style.opacity='0')">
+            <div style="font-size:11px;color:var(--text-secondary);margin-bottom:2px;padding:0 4px;display:flex;align-items:center;gap:4px;word-break:break-word;">
+                ${escapeHtml(msg.username)} · ${time} ${replyBtn} ${deleteBtn}
+            </div>
+            <div style="background:${bg};color:${color};padding:10px 14px;border-radius:16px;border:${border};font-size:14px;line-height:1.4;word-break:break-word;${msg.reply_to ? 'border-top-left-radius:4px;' : ''}">
+                ${replyHtml}
+                ${messageText}
+            </div>
+            ${reactionsHtml}
+            <div style="display:flex;gap:4px;margin-top:4px;padding-left:4px;">
+                ${['👍','❤️','😂','😮','😢','🙏'].map(emoji => `
+                    <button onclick="reactToMessage(${msg.id}, '${emoji}')" style="background:none;border:none;cursor:pointer;font-size:14px;opacity:0.6;transition:opacity 0.2s;padding:2px;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">${emoji}</button>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+
+
+async function sendMessage() {
+    const input = document.getElementById("chat-input");
+    const message = input?.value.trim();
+    if (!message) return;
+    
+    const token = localStorage.getItem("token");
+    
+    try {
+        const body = { message };
+        if (replyToId) body.replyTo = replyToId;
+        
+        const res = await fetch(API + "/chat", {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+            },
+            body: JSON.stringify(body)
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            input.value = "";
+            cancelReply();
+            await loadChat();
+        } else {
+            alert(data.message || "Failed to send");
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Cannot send message");
+    }
+}
+
+function startReply(msgId, username) {
+    replyToId = msgId;
+    replyToUsername = username;
+    const bar = document.getElementById("reply-bar");
+    const name = document.getElementById("reply-name");
+    if (bar && name) {
+        bar.style.display = "flex";
+        name.textContent = username;
+    }
+    document.getElementById("chat-input")?.focus();
+}
+
+function cancelReply() {
+    replyToId = null;
+    replyToUsername = null;
+    const bar = document.getElementById("reply-bar");
+    if (bar) bar.style.display = "none";
+}
+
+function toggleStickers() {
+    const picker = document.getElementById("sticker-picker");
+    if (picker) {
+        picker.style.display = picker.style.display === "none" ? "flex" : "none";
+    }
+}
+
+function sendSticker(code) {
+    const input = document.getElementById("chat-input");
+    if (input) {
+        input.value += (input.value ? " " : "") + code;
+        toggleStickers();
+        input.focus();
+    }
+}
+
+async function deleteMessage(msgId) {
+    if (!confirm("Delete this message?")) return;
+    
+    const token = localStorage.getItem("token");
+    try {
+        const res = await fetch(API + "/chat/" + msgId, {
+            method: "DELETE",
+            headers: { "Authorization": "Bearer " + token }
+        });
+        const data = await res.json();
+        if (data.success) {
+            await loadChat();
+        } else {
+            alert(data.message || "Failed to delete");
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Cannot delete message");
+    }
+}
+
+async function reactToMessage(msgId, emoji) {
+    const token = localStorage.getItem("token");
+    try {
+        const res = await fetch(API + "/chat/" + msgId + "/react", {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+            },
+            body: JSON.stringify({ emoji })
+        });
+        const data = await res.json();
+        if (data.success) {
+            await loadChat();
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+
+async function loadVehicles() {
+    const token = localStorage.getItem("token");
+    const content = document.getElementById("content-vehicles");
+    const loader = document.getElementById("loader-vehicles");
+    if (!content || !loader) return;
+    
+    try {
+        const res = await fetch(API + "/vehicles", { headers: { "Authorization": "Bearer " + token }});
+        const data = await res.json();
+        
+        if (!data.success || !data.data.length) {
+            content.innerHTML = `<div class="empty-state"><i class="fas fa-car"></i><h3>No Vehicles</h3><p>You don't own any vehicles yet.</p></div>`;
+            loader.style.display = "none";
+            return;
+        }
+        
+        let html = '<div class="vehicle-grid">';
+        for (const v of data.data) {
+            const statusClass = `status-${v.status}`;
+            const statusText = v.status.charAt(0).toUpperCase() + v.status.slice(1);
+            
+            html += `
+                <div class="vehicle-card">
+                    <img class="vehicle-image" src="https://files.sa-mp.com/vehicles/${v.modelid}.jpg" alt="Vehicle ${v.modelid}" onerror="this.src='https://sa-skins.netlify.app/vehicle-placeholder.png'">
+                    <div class="vehicle-info">
+                        <div class="vehicle-name">${getVehicleName(v.modelid)}</div>
+                        <div class="vehicle-meta">
+                            <span><i class="fas fa-hashtag"></i> ID: ${v.id}</span>
+                            <span><i class="fas fa-palette"></i> ${v.color1}/${v.color2}</span>
+                            <span><i class="fas fa-heart"></i> ${Math.floor(v.health||1000)} HP</span>
+                        </div>
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                        <div style="margin-top:10px;font-size:12px;color:var(--text-secondary);">
+                            <i class="fas fa-map-marker-alt"></i> ${v.pos_x?.toFixed(1)||0}, ${v.pos_y?.toFixed(1)||0}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        html += '</div>';
+        content.innerHTML = html;
+        loader.style.display = "none";
+    } catch (err) {
+        console.error(err);
+        content.innerHTML = `<div class="empty-state"><h3>Error loading vehicles</h3></div>`;
+        loader.style.display = "none";
+    }
+}
+
+async function loadHouses() {
+    const token = localStorage.getItem("token");
+    const content = document.getElementById("content-houses");
+    const loader = document.getElementById("loader-houses");
+    if (!content || !loader) return;
+    
+    try {
+        const res = await fetch(API + "/houses", { headers: { "Authorization": "Bearer " + token }});
+        const data = await res.json();
+        
+        if (!data.success || !data.data.length) {
+            content.innerHTML = `<div class="empty-state"><i class="fas fa-home"></i><h3>No Houses</h3><p>You don't own any houses yet.</p></div>`;
+            loader.style.display = "none";
+            return;
+        }
+        
+        let html = '<div class="stats-grid">';
+        for (const h of data.data) {
+            html += `
+                <div class="stat-card">
+                    <div class="icon" style="background:linear-gradient(135deg,#ff6b35,#ff4757);color:white;">
+                        <i class="fas fa-home"></i>
+                    </div>
+                    <div class="label">House #${h.id}</div>
+                    <div class="value small">
+                        <div style="margin-bottom:4px;"><i class="fas fa-dollar-sign"></i> $${formatNum(h.price||0)}</div>
+                        <div style="margin-bottom:4px;"><i class="fas fa-level-up-alt"></i> Level ${h.level||0}</div>
+                        <div><i class="fas fa-map-marker-alt"></i> ${h.pos_x?.toFixed(1)||0}, ${h.pos_y?.toFixed(1)||0}</div>
+                    </div>
+                </div>
+            `;
+        }
+        html += '</div>';
+        content.innerHTML = html;
+        loader.style.display = "none";
+    } catch (err) {
+        console.error(err);
+        content.innerHTML = `<div class="empty-state"><h3>Error loading houses</h3></div>`;
+        loader.style.display = "none";
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+
+async function loadFactions() {
+    const content = document.getElementById("content-factions");
+    const loader = document.getElementById("loader-factions");
+    if (!content || !loader) return;
+    
+    try {
+        const res = await fetch(API + "/factions");
+        const data = await res.json();
+        
+        if (!data.success || !data.data.length) {
+            content.innerHTML = `<div class="empty-state"><i class="fas fa-shield-alt"></i><h3>No Factions</h3></div>`;
+            loader.style.display = "none";
+            return;
+        }
+        
+        let html = '<div class="org-grid">';
+        for (const f of data.data) {
+            const colors = ["#ff6b35", "#3742fa", "#00d4aa", "#a55eea", "#ffd700"];
+            const color = colors[f.id % colors.length];
+            
+            html += `
+                <div class="org-card">
+                    <div class="org-header">
+                        <div class="org-icon" style="background:${color};">${f.id}</div>
+                        <div>
+                            <div class="org-name">${f.name || 'Faction ' + f.id}</div>
+                            <div class="org-type">${f.shortname || 'Faction'}</div>
+                        </div>
+                    </div>
+                    <div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">
+                        <i class="fas fa-user"></i> Leader: ${f.leader || 'None'}
+                    </div>
+                    <div class="org-stats">
+                        <div class="org-stat"><div class="num">${f.type || 0}</div><div class="lbl">Type</div></div>
+                        <div class="org-stat"><div class="num">${f.rankcount || 0}</div><div class="lbl">Ranks</div></div>
+                        <div class="org-stat"><div class="num">${f.turftokens || 0}</div><div class="lbl">Tokens</div></div>
+                    </div>
+                </div>
+            `;
+        }
+        html += '</div>';
+        content.innerHTML = html;
+        loader.style.display = "none";
+    } catch (err) {
+        console.error(err);
+        content.innerHTML = `<div class="empty-state"><h3>Error loading factions</h3></div>`;
+        loader.style.display = "none";
+    }
+}
+
+async function loadGangs() {
+    const content = document.getElementById("content-gangs");
+    const loader = document.getElementById("loader-gangs");
+    if (!content || !loader) return;
+    
+    try {
+        const res = await fetch(API + "/gangs");
+        const data = await res.json();
+        
+        if (!data.success || !data.data.length) {
+            content.innerHTML = `<div class="empty-state"><i class="fas fa-skull"></i><h3>No Gangs</h3></div>`;
+            loader.style.display = "none";
+            return;
+        }
+        
+        let html = '<div class="org-grid">';
+        for (const g of data.data) {
+            const colors = ["#ff4757", "#2f3542", "#00d4aa", "#ff6b35", "#a55eea"];
+            const color = colors[g.id % colors.length];
+            
+            html += `
+                <div class="org-card">
+                    <div class="org-header">
+                        <div class="org-icon" style="background:${color};">${g.id}</div>
+                        <div>
+                            <div class="org-name">${g.name || 'Gang ' + g.id}</div>
+                            <div class="org-type">Level ${g.level || 0}</div>
+                        </div>
+                    </div>
+                    <div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">
+                        <i class="fas fa-user"></i> Leader: ${g.leader || 'None'}
+                    </div>
+                    <div class="org-stats">
+                        <div class="org-stat"><div class="num">${g.points || 0}</div><div class="lbl">Points</div></div>
+                        <div class="org-stat"><div class="num">${g.strikes || 0}</div><div class="lbl">Strikes</div></div>
+                        <div class="org-stat"><div class="num">${g.turftokens || 0}</div><div class="lbl">Tokens</div></div>
+                    </div>
+                </div>
+            `;
+        }
+        html += '</div>';
+        content.innerHTML = html;
+        loader.style.display = "none";
+    } catch (err) {
+        console.error(err);
+        content.innerHTML = `<div class="empty-state"><h3>Error loading gangs</h3></div>`;
+        loader.style.display = "none";
+    }
+}
+
+async function loadPoints() {
+    const content = document.getElementById("content-points");
+    const loader = document.getElementById("loader-points");
+    if (!content || !loader) return;
+    
+    try {
+        const res = await fetch(API + "/points");
+        const data = await res.json();
+        
+        if (!data.success || !data.data.length) {
+            content.innerHTML = `<div class="empty-state"><i class="fas fa-map-pin"></i><h3>No Points</h3></div>`;
+            loader.style.display = "none";
+            return;
+        }
+        
+        let html = '<div class="table-wrapper"><table class="data-table">';
+        html += '<thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Captured By</th><th>Profits</th><th>Location</th></tr></thead><tbody>';
+        
+        for (const p of data.data) {
+            html += `<tr>
+                <td>${p.id}</td>
+                <td>${p.name || 'Point ' + p.id}</td>
+                <td>${p.type || 0}</td>
+                <td>${p.capturedby || 'None'}</td>
+                <td>$${formatNum(p.profits || 0)}</td>
+                <td>${p.point_x?.toFixed(1)||0}, ${p.point_y?.toFixed(1)||0}</td>
+            </tr>`;
+        }
+        html += '</tbody></table></div>';
+        content.innerHTML = html;
+        loader.style.display = "none";
+    } catch (err) {
+        console.error(err);
+        content.innerHTML = `<div class="empty-state"><h3>Error loading points</h3></div>`;
+        loader.style.display = "none";
+    }
+}
+
+
+async function loadTurfs() {
+    const content = document.getElementById("content-turfs");
+    const loader = document.getElementById("loader-turfs");
+    if (!content || !loader) return;
+    
+    try {
+        const res = await fetch(API + "/turfs");
+        const data = await res.json();
+        
+        if (!data.success || !data.data.length) {
+            content.innerHTML = `<div class="empty-state"><i class="fas fa-border-all"></i><h3>No Turfs</h3></div>`;
+            loader.style.display = "none";
+            return;
+        }
+        
+        let html = '<div class="table-wrapper"><table class="data-table">';
+        html += '<thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Captured By</th><th>Time</th><th>Area</th></tr></thead><tbody>';
+        
+        for (const t of data.data) {
+            html += `<tr>
+                <td>${t.id}</td>
+                <td>${t.name || 'Turf ' + t.id}</td>
+                <td>${t.type || 0}</td>
+                <td>${t.capturedby || 'None'}</td>
+                <td>${t.time || 0} min</td>
+                <td>${t.min_x?.toFixed(1)||0}, ${t.min_y?.toFixed(1)||0} to ${t.max_x?.toFixed(1)||0}, ${t.max_y?.toFixed(1)||0}</td>
+            </tr>`;
+        }
+        html += '</tbody></table></div>';
+        content.innerHTML = html;
+        loader.style.display = "none";
+    } catch (err) {
+        console.error(err);
+        content.innerHTML = `<div class="empty-state"><h3>Error loading turfs</h3></div>`;
+        loader.style.display = "none";
+    }
+}
+
+
+function getVehicleName(modelid) {
+    const names = {
+        400: "Landstalker", 401: "Bravura", 402: "Buffalo", 403: "Linerunner",
+        404: "Perennial", 405: "Sentinel", 406: "Dumper", 407: "Firetruck",
+        408: "Trashmaster", 409: "Stretch", 410: "Manana", 411: "Infernus",
+        412: "Voodoo", 413: "Pony", 414: "Mule", 415: "Cheetah",
+        416: "Ambulance", 417: "Leviathan", 418: "Moonbeam", 419: "Esperanto",
+        420: "Taxi", 421: "Washington", 422: "Bobcat", 423: "Mr Whoopee",
+        424: "BF Injection", 425: "Hunter", 426: "Premier", 427: "Enforcer",
+        428: "Securicar", 429: "Banshee", 430: "Predator", 431: "Bus",
+        432: "Rhino", 433: "Barracks", 434: "Hotknife", 435: "Artic Trailer",
+        436: "Previon", 437: "Coach", 438: "Cabbie", 439: "Stallion",
+        440: "Rumpo", 441: "RC Cam", 442: "Romero", 443: "Packer",
+        444: "Monster", 445: "Admiral", 446: "Squalo", 447: "Seasparrow",
+        448: "Pizzaboy", 449: "Tram", 450: "Artic Trailer 2", 451: "Turismo",
+        452: "Speeder", 453: "Reefer", 454: "Tropic", 455: "Flatbed",
+        456: "Yankee", 457: "Caddy", 458: "Solair", 459: "Top Fun",
+        460: "Skimmer", 461: "PCJ-600", 462: "Faggio", 463: "Freeway",
+        464: "RC Baron", 465: "RC Raider", 466: "Glendale", 467: "Oceanic",
+        468: "Sanchez", 469: "Sparrow", 470: "Patriot", 471: "Quad",
+        472: "Coastguard", 473: "Dinghy", 474: "Hermes", 475: "Sabre",
+        476: "Rustler", 477: "ZR-350", 478: "Walton", 479: "Regina",
+        480: "Comet", 481: "BMX", 482: "Burrito", 483: "Camper",
+        484: "Marquis", 485: "Baggage", 486: "Dozer", 487: "Maverick",
+        488: "VCN Maverick", 489: "Rancher", 490: "FBI Rancher", 491: "Virgo",
+        492: "Greenwood", 493: "Jetmax", 494: "Hotring", 495: "Sandking",
+        496: "Blista Compact", 497: "Police Maverick", 498: "Boxville",
+        499: "Benson", 500: "Mesa", 501: "RC Goblin", 502: "Hotring Racer",
+        503: "Hotring Racer 2", 504: "Bloodring Banger", 505: "Rancher",
+        506: "Super GT", 507: "Elegant", 508: "Journey", 509: "Bike",
+        510: "Mountain Bike", 511: "Beagle", 512: "Cropdust", 513: "Stunt",
+        514: "Petrol", 515: "Roadtrain", 516: "Nebula", 517: "Majestic",
+        518: "Buccaneer", 519: "Shamal", 520: "Hydra", 521: "FCR-900",
+        522: "NRG-500", 523: "HPV1000", 524: "Cement Truck", 525: "Tow Truck",
+        526: "Fortune", 527: "Cadrona", 528: "FBI Truck", 529: "Willard",
+        530: "Forklift", 531: "Tractor", 532: "Combine", 533: "Feltzer",
+        534: "Remington", 535: "Slamvan", 536: "Blade", 537: "Freight",
+        538: "Streak", 539: "Vortex", 540: "Vincent", 541: "Bullet",
+        542: "Clover", 543: "Sadler", 544: "Firetruck", 545: "Hustler",
+        546: "Intruder", 547: "Primo", 548: "Cargobob", 549: "Tampa",
+        550: "Sunrise", 551: "Merit", 552: "Utility", 553: "Nevada",
+        554: "Yosemite", 555: "Windsor", 556: "Monster A", 557: "Monster B",
+        558: "Uranus", 559: "Jester", 560: "Sultan", 561: "Stratum",
+        562: "Elegy", 563: "Raindance", 564: "RC Tiger", 565: "Flash",
+        566: "Tahoma", 567: "Savanna", 568: "Bandito", 569: "Freight Flat",
+        570: "Streak Trailer", 571: "Kart", 572: "Mower", 573: "Duneride",
+        574: "Sweeper", 575: "Broadway", 576: "Tornado", 577: "AT-400",
+        578: "DFT-30", 579: "Huntley", 580: "Stafford", 581: "BF-400",
+        582: "Newsvan", 583: "Tug", 584: "Petrol Trailer", 585: "Emperor",
+        586: "Wayfarer", 587: "Euros", 588: "Hotdog", 589: "Club",
+        590: "Freight Trailer", 591: "Artic Trailer 3", 592: "Andromada",
+        593: "Dodo", 594: "RC Cam", 595: "Launch", 596: "Police Car (LSPD)",
+        597: "Police Car (SFPD)", 598: "Police Car (LVPD)", 599: "Police Ranger",
+        600: "Picador", 601: "S.W.A.T.", 602: "Alpha", 603: "Phoenix",
+        604: "Glendale", 605: "Sadler", 606: "Baggage Trailer A",
+        607: "Baggage Trailer B", 608: "Tug Stairs", 609: "Boxville",
+        610: "Farm Trailer", 611: "Utility Trailer"
+    };
+    return names[modelid] || `Vehicle ${modelid}`;
+}
+
+function formatNum(n) {
+    if (n === null || n === undefined) return "0";
+    return Number(n).toLocaleString();
+}
+
+async function loadMap() {
+    const token = localStorage.getItem("token");
+    const content = document.getElementById("content-map");
+    const loader = document.getElementById("loader-map");
+    if (!content || !loader) return;
+    
+    content.innerHTML = `
+        <div id="map" style="width:100%;height:600px;border-radius:16px;border:1px solid var(--border);margin-bottom:20px;"></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;">
+            <div class="stat-card">
+                <div class="icon" style="background:linear-gradient(135deg,#00d4aa,#00a884);color:white;"><i class="fas fa-car"></i></div>
+                <div class="label">Vehicles</div>
+                <div class="value small" id="map-vehicle-count">Loading...</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon" style="background:linear-gradient(135deg,#ff6b35,#ff4757);color:white;"><i class="fas fa-home"></i></div>
+                <div class="label">Houses</div>
+                <div class="value small" id="map-house-count">Loading...</div>
+            </div>
+        </div>
+    `;
+    loader.style.display = "none";
+    
+    // Initialize Leaflet map with SA-MP satellite tiles
+    const map = L.map('map', {
+        crs: L.CRS.Simple,
+        minZoom: 0,
+        maxZoom: 6,
+        zoom: 2,
+        center: [1500, 1500]
+    });
+    
+    // Add SA-MP SATELLITE map tiles
+    L.tileLayer('http://tiles.gtadb.com/gtasa/satellite/{z}/{x}/{y}.png', {
+        attribution: 'SA-MP Satellite Map',
+        tileSize: 256,
+        minZoom: 0,
+        maxZoom: 6,
+        noWrap: true
+    }).addTo(map);
+    
+    // Custom marker icons
+    const carIcon = L.divIcon({
+        className: 'custom-marker',
+        html: '<div style="background:#00d4aa;width:14px;height:14px;border-radius:50%;border:3px solid white;box-shadow:0 2px 12px rgba(0,212,170,0.6);animation:pulse 2s infinite;"></div>',
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
+    });
+    
+    const houseIcon = L.divIcon({
+        className: 'custom-marker',
+        html: '<div style="background:#ff6b35;width:14px;height:14px;border-radius:50%;border:3px solid white;box-shadow:0 2px 12px rgba(255,107,53,0.6);"></div>',
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
+    });
+    
+    // Add pulse animation
+    const style = document.createElement('style');
+    style.innerHTML = `
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Fetch and display locations
+    try {
+        const res = await fetch(API + "/map-data", { headers: { "Authorization": "Bearer " + token }});
+        const data = await res.json();
+        
+        if (data.success) {
+            let vehicleCount = 0;
+            let houseCount = 0;
+            
+            // Add vehicle markers
+            for (const v of data.data.vehicles) {
+                if (v.x && v.y) {
+                    // Convert SA coords to map coords
+                    // SA map is 3000x3000, origin at center (0,0)
+                    // Leaflet Simple CRS: [y, x] with 0,0 at top-left
+                    const lat = 3000 - (v.y + 1500);
+                    const lng = v.x + 1500;
+                    
+                    L.marker([lat, lng], { icon: carIcon })
+                        .addTo(map)
+                        .bindPopup(`
+                            <div style="font-family:Inter,sans-serif;padding:4px;">
+                                <b style="font-size:14px;color:#00d4aa;">${v.name}</b><br>
+                                <span style="font-size:12px;color:#666;">Status: <span style="color:${v.status === 'spawned' ? '#00d4aa' : v.status === 'garage' ? '#3742fa' : '#ff4757'};text-transform:capitalize;">${v.status}</span></span><br>
+                                <span style="font-size:11px;color:#888;">Coords: ${v.x.toFixed(1)}, ${v.y.toFixed(1)}</span>
+                            </div>
+                        `);
+                    vehicleCount++;
+                }
+            }
+            
+            // Add house markers
+            for (const h of data.data.houses) {
+                if (h.x && h.y) {
+                    const lat = 3000 - (h.y + 1500);
+                    const lng = h.x + 1500;
+                    
+                    L.marker([lat, lng], { icon: houseIcon })
+                        .addTo(map)
+                        .bindPopup(`
+                            <div style="font-family:Inter,sans-serif;padding:4px;">
+                                <b style="font-size:14px;color:#ff6b35;">${h.name}</b><br>
+                                <span style="font-size:11px;color:#888;">Coords: ${h.x.toFixed(1)}, ${h.y.toFixed(1)}</span>
+                            </div>
+                        `);
+                    houseCount++;
+                }
+            }
+            
+            document.getElementById("map-vehicle-count").innerText = `${vehicleCount} vehicles`;
+            document.getElementById("map-house-count").innerText = `${houseCount} houses`;
+            
+            // Fit bounds if we have markers
+            if (vehicleCount > 0 || houseCount > 0) {
+                const group = new L.featureGroup();
+                map.eachLayer(layer => {
+                    if (layer instanceof L.Marker) group.addLayer(layer);
+                });
+                if (group.getLayers().length > 0) {
+                    map.fitBounds(group.getBounds().pad(0.1));
+                }
+            }
+        }
+    } catch (err) {
+        console.error("Map data error:", err);
+        content.innerHTML += `<div style="color:#ff4757;margin-top:10px;"><i class="fas fa-exclamation-circle"></i> Error loading map data</div>`;
+    }
+}
+
+
+async function logout() {
+    const token = localStorage.getItem("token");
+    if (token) {
+        try {
+            await fetch(API + "/logout", {
+                method: "POST",
+                headers: { "Authorization": "Bearer " + token }
+            });
+        } catch(e) {}
+    }
+    localStorage.clear();
+    location.reload();
+}
+</script>
+</body>
+</html>'''
