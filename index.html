@@ -1680,7 +1680,8 @@ async function sendMessage() {
     
     const token = localStorage.getItem("token");
     try {
-        const body = { message, category: currentChat.category, recipientUid: currentChat.otherUid };
+        const body = { message, category: currentChat.category };
+        if (currentChat.category === 'dm') body.recipientUid = currentChat.otherUid;
         if (replyToId) body.replyTo = replyToId;
         
         const res = await fetch(API + "/chat", {
@@ -1703,6 +1704,7 @@ async function sendMessage() {
         alert("Cannot send message");
     }
 }
+
 
 function renderChatMessage(msg, isMe) {
     const time = new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
