@@ -1681,7 +1681,9 @@ async function sendMessage() {
     const token = localStorage.getItem("token");
     try {
         const body = { message, category: currentChat.category };
-        if (currentChat.category === 'dm') body.recipientUid = currentChat.otherUid;
+        if (currentChat.category === 'dm' && currentChat.otherUid) {
+            body.recipientUid = parseInt(currentChat.otherUid);
+        }
         if (replyToId) body.replyTo = replyToId;
         
         const res = await fetch(API + "/chat", {
@@ -1704,6 +1706,7 @@ async function sendMessage() {
         alert("Cannot send message");
     }
 }
+
 
 
 function renderChatMessage(msg, isMe) {
